@@ -1,3 +1,6 @@
+# Big files
+KCPD_Crime_Data_Complete.csv
+
 __pycache__/
 *.py[cod]
 *$py.class
