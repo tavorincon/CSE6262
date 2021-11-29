@@ -1,5 +1,6 @@
 # Big files
 KCPD_Crime_Data_Complete.csv
+frontend/templates/adminlte/
 
 __pycache__/
 *.py[cod]

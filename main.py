@@ -33,5 +33,12 @@ async def show_map(request: Request):
         {"request": request, "mapbox_key": os.getenv("MAPBOX_KEY")},
     )
 
+@app.get("/dash", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request,
+        "segment": "index"},
+    )
 
 app.mount("/app", StaticFiles(directory="frontend/app"), name="app")
