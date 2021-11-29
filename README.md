@@ -1,7 +1,10 @@
 # CSE6242 Project
 
-## For running the webserver locally
-Run `make server`
+# First steps
+1) Clone this repository in your PC
+2) Copy the `KCPD_Crime_Data_Complete.csv` file into `data/crime`
+3) Rename `.env-example` to `.env`. This file contains your environment configuration. The `.env` should not be commited to GitHub, since each developer / server using the application could require a different environment configuration. Furthermore, this would be a security risk, since any sensitive credentials would get exposed.
+4) For running the webserver locally run `make server`
 
 ## Displaying maps
 The project uses MapBox for obtaining the map tiles. You need to generate an [Access Token](https://account.mapbox.com/access-tokens/), then copy and paste it in the `.env` file.
