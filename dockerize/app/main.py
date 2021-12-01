@@ -32,7 +32,7 @@ def predict_crime(model, period, frequency):
 	 
 	return json.dumps(parsed, indent=4) 
 
-def monthly_crime():
+def crime_prediction_data(frequency):
 	config = {
 		'user': 'root',
 		'password': 'root',
@@ -42,7 +42,7 @@ def monthly_crime():
     }
 	connection = mysql.connector.connect(**config)
 	cursor = connection.cursor()
-	cursor.execute('SELECT ds, yhat, zip_code FROM monthly_crime')
+	cursor.execute('SELECT ds, yhat, zip_code FROM', frequency)
 	results = [{zip_code: yhat} for (ds, yhat, zip_code) in cursor]
 	cursor.close()
 	connection.close()
@@ -60,9 +60,9 @@ async def crime_prediction(per: int, freq: str):
 	return predict_crime(model, per, freq)
 
 
-@app.get('/get_monthly_crime/')
-async def index():
-    
-	return json.dumps({'monthly_crime': monthly_crime()})
+@app.get('/get_crime_data/')
+async def get_crime_prediction_data(freq: str):
+#async def index():
+	return json.dumps({'crime_data': crime_prediction_data(freq)})
 
 
