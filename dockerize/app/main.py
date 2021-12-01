@@ -4,10 +4,14 @@ import pickle
 import pandas as pd 
 import datetime
 import json
+import mysql.connector
+
+
+#PATH_TO_MODELS_DIR = Path('.')
 
 app = FastAPI()
 
-model_path = 'time_series.pkl'
+model_path = '/code/app/time_series.pkl'
 
 with open(model_path,"rb") as f:
 	model = pickle.load(f)
@@ -28,6 +32,24 @@ def predict_crime(model, period, frequency):
 	 
 	return json.dumps(parsed, indent=4) 
 
+def monthly_crime():
+	config = {
+		'user': 'root',
+		'password': 'root',
+		'host': 'db',
+		'port': '3306',
+		'database': 'crime_db'
+    }
+	connection = mysql.connector.connect(**config)
+	cursor = connection.cursor()
+	cursor.execute('SELECT ds, yhat, zip_code FROM monthly_crime')
+	results = [{zip_code: yhat} for (ds, yhat, zip_code) in cursor]
+	cursor.close()
+	connection.close()
+
+	return results
+
+
 @app.get('/')
 def get_root():
 
@@ -36,3 +58,11 @@ def get_root():
 @app.get('/predict_crime/')
 async def crime_prediction(per: int, freq: str):
 	return predict_crime(model, per, freq)
+
+
+@app.get('/get_monthly_crime/')
+async def index():
+    
+	return json.dumps({'monthly_crime': monthly_crime()})
+
+
