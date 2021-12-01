@@ -42,7 +42,7 @@ def crime_prediction_data(frequency):
     }
 	connection = mysql.connector.connect(**config)
 	cursor = connection.cursor()
-	cursor.execute('SELECT ds, yhat, zip_code FROM', frequency)
+	cursor.execute(f'SELECT ds, yhat, zip_code FROM {frequency}')
 	results = [{zip_code: yhat} for (ds, yhat, zip_code) in cursor]
 	cursor.close()
 	connection.close()
