@@ -107,3 +107,10 @@ venv.bak/
 .mypy_cache/
 
 .idea/*
+
+# Javascript
+node_modules/
+*.log*
+.DS_Store
+coverage/
+package-lock.json
