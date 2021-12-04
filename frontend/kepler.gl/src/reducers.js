@@ -22,21 +22,34 @@ import {combineReducers} from 'redux';
 import {handleActions} from 'redux-actions';
 import {routerReducer} from 'react-router-redux';
 import keplerGlReducer from 'kepler.gl/reducers';
-
+import Redux from 'redux';
+import KeplerGl from 'kepler.gl';
 
 // INITIAL_APP_STATE
 const initialAppState = {
-  appName: 'example',
+  appName: 'koios-crime',
   loaded: false
 };
 
-const reducers = combineReducers({
-  // mount keplerGl reducer
-  keplerGl: keplerGlReducer,
-  app: handleActions({
-    // you can put your app reducer here
-  }, initialAppState),
-  routing: routerReducer
-});
+const reducers = (function createReducers(redux, keplerGl) {
+  const customizedKeplerGlReducer = keplerGlReducer.initialState({
+     uiState: {
+       readOnly: true,
+       currentModal: null,
+       mapControls: {
+         mapLegend: { show: true, active: true },
+         toggle3d: { show: true }
+       }
+    }
+  });
+  return combineReducers({
+    // mount keplerGl reducer
+    keplerGl: customizedKeplerGlReducer,
+    app: handleActions({
+      // you can put your app reducer here
+    }, initialAppState),
+    routing: routerReducer
+  });
+}(Redux, KeplerGl));
 
 export default reducers;

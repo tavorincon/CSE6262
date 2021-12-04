@@ -4,6 +4,7 @@
     "build": "webpack"
   },
   "dependencies": {
+    "axios": "^0.24.0",
     "global": "^4.3.0",
     "kepler.gl": "^0.1.6",
     "react": "^15.3.1",

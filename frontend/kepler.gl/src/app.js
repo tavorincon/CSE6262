@@ -19,6 +19,8 @@
 // THE SOFTWARE.
 
 import React, { Component } from 'react';
+import axios from 'axios';
+
 import { connect } from 'react-redux';
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
 import KeplerGl from 'kepler.gl';
@@ -32,17 +34,32 @@ import KeplerGlSchema from 'kepler.gl/schemas';
 
 import Button from './button';
 import downloadJsonFile from "./file-download";
-import nycConfig from './data/nyc-config.json';
-import nycTripsSubset from './data/nyc-subset.csv';
+import initialConfig from './data/initial-config.json';
+import initialData from './data/initial-data.csv';
 
-
-import nycTrips from './data/nyc-trips.csv';
 const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN; // eslint-disable-line
 
 class App extends Component {
+  constructor() {
+    super();
+    this.state = {
+      year: 2021
+    };
+  }
+
+  changeYear = (type) => {
+    let newYear = this.state.year + type;
+    this.setState({
+      year: newYear
+    });
+
+    this.getData(newYear);
+  };
+
+
   componentDidMount() {
     // Use processCsvData helper to convert csv file into kepler.gl structure {fields, rows}
-    const data = Processors.processCsvData(nycTrips);
+    const data = Processors.processCsvData(initialData);
     // Create dataset structure
     const dataset = {
       data,
@@ -53,7 +70,13 @@ class App extends Component {
       }
     };
     // addDataToMap action to inject dataset into kepler.gl instance
-    this.props.dispatch(addDataToMap({ datasets: dataset, config: nycConfig }));
+    this.props.dispatch(addDataToMap({ datasets: dataset, config: initialConfig, readOnly: true }));
+
+    // Wait 1/2 second to make sure the map is loaded
+    setTimeout(() => {
+      this.changeYear(0);
+    }, 500);
+
   }
 
   // This method is used as reference to show how to export the current kepler.gl instance configuration
@@ -77,10 +100,25 @@ class App extends Component {
     downloadJsonFile(mapConfig, 'kepler.gl.json');
   };
 
+  getData = (year) => {
+    this.reset()
+    let url = `/historical-crime?year=${year}`;
+    console.log(url);
+    axios.get(url)
+      .then(res => {
+        const crime = res.data;
+        const data = Processors.processCsvData(crime);
+        this.replaceData(data);
+      })
+  }
+
+  reset = () => {
+    let data = Processors.processCsvData(initialData);
+    this.replaceData(data);
+  }
+
   // Created to show how to replace dataset with new data and keeping the same configuration
-  replaceData = () => {
-    // Use processCsvData helper to convert csv file into kepler.gl structure {fields, rows}
-    const data = Processors.processCsvData(nycTripsSubset);
+  replaceData = (data) => {
     // Create dataset structure
     const dataset = {
       data,
@@ -95,15 +133,16 @@ class App extends Component {
     const config = this.getMapConfig();
 
     // addDataToMap action to inject dataset into kepler.gl instance
-    this.props.dispatch(addDataToMap({ datasets: dataset, config }));
-  };
+    this.props.dispatch(addDataToMap({ datasets: dataset, config, readOnly: true }));
 
+  };
+  // <Button onClick={this.exportMapConfig}>Export Config</Button>
   render() {
+    let { year } = this.state;
+
     return (
       <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
-        <Button onClick={this.replaceData}>Replace Data</Button>
-        <Button onClick={this.exportMapConfig}>Export Config</Button>
-
+        <Button onClick={this.changeYear}>Year {year}</Button>
 
         <AutoSizer>
           {({ height, width }) => (

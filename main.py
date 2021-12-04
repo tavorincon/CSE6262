@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 import dotenv
 import os
@@ -14,14 +15,26 @@ dotenv.load_dotenv()
 
 app = FastAPI()
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 @app.get("/historical-crime")
-# Agregar filtro por fecha y el default seria un año hacia atras (para el mapa 3D por hexagono)
-async def historical_data(days: Optional[int] = 365):
+# Agregar filtro por 'year' .. el front se encarga de enviar siempre un 'year' (para el mapa 3D por hexagono)
+async def historical_data(year: int):
     # Cambiar el CSV por el query
     with open("data/crime/test_latlon.csv", 'r') as f:
         return f.read()
