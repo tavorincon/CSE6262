@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -14,7 +14,8 @@ import pickle
 import pandas as pd
 import mysql.connector
 from fastapi.responses import JSONResponse
-
+from sqlalchemy import create_engine
+import pdb
 
 # Load dotenv
 dotenv.load_dotenv()
@@ -83,6 +84,27 @@ def crime_prediction_data(frequency, nodays = 30):
 
     return results
 
+def crime_prediction_data_bytype(frequency, nodays = 30):
+
+    start_date = datetime.date(2021, 12, 1)
+    end_date = start_date + datetime.timedelta(days=nodays)
+
+    config = {
+        'user': 'root',
+        'password': 'root',
+        'host': 'db',
+        'port': '3306',
+        'database': 'crime_db'
+    }
+    connection = mysql.connector.connect(**config)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT ds, yhat, zip_code, IBRS FROM {frequency}_bytype WHERE ds BETWEEN \'{start_date}\' AND \'{end_date}\'')
+    results = [{str(ds): {'zip_code': zip_code, 'prediction': yhat, 'crime_type': IBRS}} for (ds, yhat, zip_code, IBRS) in cursor]
+    cursor.close()
+    connection.close()
+
+    return results
+
 #################################################################################
 # API Functions
 #################################################################################
@@ -93,11 +115,19 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/historical-crime")
-# Agregar filtro por 'year' .. el front se encarga de enviar siempre un 'year' (para el mapa 3D por hexagono)
 async def historical_data(year: int):
-    # Cambiar el CSV por el query
-    with open("data/crime/test_latlon.csv", 'r') as f:
-        return f.read()
+
+#    pdb.set_trace()
+
+    db_connection_str = 'mysql+pymysql://root:root@db:3306/crime_db'
+    db_connection = create_engine(db_connection_str)
+    df = pd.read_sql(f'SELECT * FROM crime_db.historical_crime WHERE year(datetime) = {year}', con=db_connection)
+    
+    results = df.to_csv(index=False)
+
+    return Response(content=results, media_type="text/csv")
+
+
 
 @app.get("/officer-allocation")
 # Regresa la predicción del numero de crimenes y la asignación propuesta de oficiales (para pintar el mapa por zipcode)
@@ -121,6 +151,11 @@ async def crime_prediction(per: int, freq: str):
 async def get_crime_prediction_data(freq: str, days: int):
 #async def index():
 	return JSONResponse(content=crime_prediction_data(freq))
+
+@app.get('/get_crime_data_bytype/')
+async def get_crime_prediction_data_bytype(freq: str, days: int):
+#async def index():
+	return JSONResponse(content=crime_prediction_data_bytype(freq))
 
 
 ################################################################################
