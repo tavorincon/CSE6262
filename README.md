@@ -2,8 +2,8 @@
 
 # First steps
 1) Clone this repository in your PC. For first timers, follow [these](https://www.jcchouinard.com/clone-github-repository-on-windows/) instructions.
-2) Copy the `KCPD_Crime_Data_Complete.csv` file available [here](https://b.gatech.edu/3EsQa1M) file into `data/crime`
-3) Create a directory called `db` and copy the `init.sql` file available [here](https://b.gatech.edu/3EsQa1M) into `db/`
+2) Copy the `KCPD_Crime_Data_Complete.csv` file available [here](https://b.gatech.edu/3EsQa1M) into `data/crime`
+3) Copy the `init.sql` file available [here](https://b.gatech.edu/3EsQa1M) into `db/`
 4) Rename `.env-example` to `.env`. This file contains your environment configuration. The `.env` should not be commited to GitHub, since each developer / server using the application could require a different environment configuration. Furthermore, this would be a security risk, since any sensitive credentials would get exposed. Then, follow the "Obtain credentials tokens for .env file" instructions below to populate the .env file
 
 # Obtain credentials tokens for .env file
