@@ -13,6 +13,6 @@ RUN pip3 install convertdate==2.1.2 lunarcalendar==0.0.9 holidays==0.10.3 cython
 
 # Install/build Prophet
 RUN pip3 install fbprophet==0.6
-
+RUN pip3 install pymysql
 # For development purposes not needed
 # COPY ./ /app
