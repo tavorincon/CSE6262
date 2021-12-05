@@ -13,7 +13,6 @@ The project uses MapBox for obtaining the map tiles. You need to generate an [Ac
 ### Obtaining geoJSON boundaries
 For displaying the ZIP Codes polygons we obtained the boundaries from a freemium API in RapidAPI. If you want to refresh the data you need to create an API key [here](https://rapidapi.com/VanitySoft/api/boundaries-io-1/), then copy and paste it in the `.env` file. (Make sure to Sign-up and Subscribe before copying access token)
 
-
 # Deploying application
 
 ## Via Docker (RECOMMENDED METHOD)
@@ -22,6 +21,10 @@ For displaying the ZIP Codes polygons we obtained the boundaries from a freemium
 
 ## Local Deployment
 1) For running the webserver locally run `make server`
+
+# Original Datasets & Prediction Results
+The original datasets used to build this project can be found [here](https://data.kcmo.org/browse?limitTo=datasets&q=crime&sortBy=relevance&utf8=%E2%9C%93&page=1). In addition, the model prediction results  are available in the [Prophet Forecasting folder](https://b.gatech.edu/3EsQa1M)
+
 
 ## Credits
 - Ismael Montes
