@@ -4,4 +4,5 @@ numpy
 python-dotenv
 aiofiles
 mysql-connector
+sqlalchemy
 
