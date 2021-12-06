@@ -35,10 +35,10 @@
 
     <style>
       #map {
-        height: 70vh;
+        height: 400px;
       }
 
-      .info {
+      .info_map {
         padding: 6px 8px;
         font: 14px/16px Arial, Helvetica, sans-serif;
         background: white;
@@ -47,7 +47,7 @@
         border-radius: 5px;
       }
 
-      .info h4 {
+      .info_map h4 {
         margin: 0 0 5px;
         color: #777;
       }
@@ -64,12 +64,26 @@
         margin-right: 8px;
         opacity: 0.7;
       }
+
+      .period-select {
+        font-size: 140%;
+        font-weight: bold;
+        color: gray;
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+      }
+
+      .clickable {
+        cursor: pointer;
+      }
     </style>
 {% endblock stylesheets %}
 
 {% block content %}
 
-  <div class="content-wrapper">
+  <div id="app" class="content-wrapper">
 
     <!-- Content Header (Page header) -->
     <div class="content-header">
@@ -91,9 +105,91 @@
 
     <!-- Main content -->
     <section class="content">
-      <div>
-        <div id="map"></div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div id="map"></div>
+          <hr>
+          <div class="card card-primary card-outline">
+            <div class="card-header">
+              <h5 class="m-0">Police Officer Allocation</h5>
+            </div>
+            <div class="card-body">
+              <p>
+                The allocation was calculated based on a target of 10 police officers per 10,000 people
+                and an estimate of 4 crimes per officer per week. If you want to change the target,
+                please contact the administrator.
+              </p>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Zip Code</th>
+                    <th scope="col">Forecasted {{ '{{ selected_forecast_type }}' }} crimes</th>
+                    <th scope="col"># armed officers</th>
+                    <th scope="col"># unarmed officers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in allocation">
+                    <td>{{ '{{ row.zip_code }}' }}</td>
+                    <td>{{ '{{ row.crimes }}' }}</td>
+                    <td>{{ '{{ row.armed }}' }}</td>
+                    <td>{{ '{{ row.unarmed }}' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- /.col-md-6 -->
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <div class="form-group">
+                <label for="select_type">Forecast by:</label>
+                <select @change="refresh" v-model="selected_forecast_type" class="custom-select rounded-0" id="select_type">
+                  <option value="week">Week</option>
+                  <option value="month">Month</option>
+                </select>
+              </div>
+              <span class="period-select">
+                <span @click="update_offset(-1)" class="clickable">&#60;</span>
+                {{ '{{ selected_forecast_type == "week" ? week_start : month_start }}' }}
+                <span @click="update_offset(1)" class="clickable">&#62;</span>
+              </span>
+              <hr>
+              <div class="form-group">
+                <label for="select_crimes">Filter crimes</label>
+                <select v-model="selected_crime" class="custom-select rounded-0" id="select_crimes">
+                  <option value="All">--- All types ---</option>
+                  <option v-for="crime_type in crime_types" :value="crime_type">{{ '{{ crime_type }}' }}</option>
+                </select>
+                <span v-if="selected_crime != 'All'">This filter does not affect officers' allocation. It is only for visualization purposes.</span>
+              </div>
+              <div class="form-group">
+                <label for="n_officers">Number of officers</label>
+                <input type="number" v-model="n_officers" class="form-control" id="n_officers" placeholder="# of officers">
+              </div>
+            </div>
+            <div class="card-footer">
+              <button @click="refresh" type="submit" class="btn btn-primary">Refresh</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h5 v-if="selected_zip_code" class="m-0">Forecasted crimes for zip code {{ '{{ selected_zip_code }}' }}
+                <span v-if="selected_crime != 'All'">{{ '{{ selected_crime }}' }}</span>
+              </h5>
+              <h5 v-else class="m-0">Click on a Zip Code for display the forecasted crimes</h5>
+            </div>
+            <div class="card-body" v-show="selected_zip_code">
+              <canvas id="myChart" width="100%"></canvas>
+            </div>
+          </div>
+
+        </div>
+
       </div>
+
     </section>
     <!-- /.content -->
 
@@ -114,8 +210,6 @@
   </script>
   <!-- Bootstrap 4 -->
   <script src="/app/adminlte-assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- ChartJS -->
-  <script src="/app/adminlte-assets/plugins/chart.js/Chart.min.js"></script>
   <!-- Sparkline -->
   <script src="/app/adminlte-assets/plugins/sparklines/sparkline.js"></script>
   <!-- JQVMap -->
@@ -144,9 +238,134 @@
     crossorigin=""></script>
   <script src="./app/us-states.js"></script>
   <script src="./app/zipcodes.js"></script>
+  <script src="./app/crime-types.js"></script>
   <script src="./app/choroplet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1.8.21/plugin/weekday.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
   <script>
-    var map = L.map('map').setView([39.099225, -94.5839147], 9);
+    dayjs.extend(window.dayjs_plugin_weekday);
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        n_officers: 700,
+        crime_types: crime_types,
+        selected_crime: 'All',
+        offset: 1,
+        selected_forecast_type: 'week',
+        allocation: [],
+        selected_zip_code: ''
+      },
+      computed: {
+        week_start: function() {
+          wk_start = dayjs().weekday(7 * this.offset);
+          wk_end = wk_start.add(6, 'day');
+          return wk_start.format("YYYY-MM-DD") + ' - ' + wk_end.format("YYYY-MM-DD")
+        },
+        month_start: function() {
+          return dayjs().add(this.offset,"month").date(1).format("YYYY-MM-DD")
+        },
+      },
+      mounted: function() {
+        this.refresh();
+      },
+      methods: {
+        update_offset: function(qty) {
+          if(this.offset == 1 && qty == -1) {
+            return;
+          }
+          this.offset += qty;
+          this.refresh();
+        },
+        update_forecast_chart: function() {
+          start_date = this.selected_forecast_type == 'week' ? dayjs().weekday(7 * this.offset) : dayjs().add(this.offset,"month").date(1);
+          axios.get('/crime-prediction', {
+            params: {
+              start: start_date.format("YYYY-MM-DD"),
+              zip_code: this.selected_zip_code,
+              crime_type: this.selected_crime
+            }
+          }).then(response => {
+            console.log(response.data);
+            myLine.data.datasets[0].data = response.data;
+            myLine.update();
+          });
+        },
+        refresh: function() {
+          // Reset the allocation
+          this.allocation = [];
+          this.selected_zip_code = '';
+
+          if (typeof geojson !== 'undefined')
+            map.removeLayer(geojson);
+
+
+          // Calculate start date
+          if(this.selected_forecast_type == 'week') {
+            start_date = dayjs().weekday(7 * this.offset).format("YYYY-MM-DD")
+          } else {
+            x = dayjs().add(this.offset,"month")
+            start_date = x.date(x.daysInMonth()).format("YYYY-MM-DD")
+          }
+          axios.get('/officer-allocation', {
+            params: {
+              type: this.selected_forecast_type,
+              start_date: start_date,
+              crime_type: this.selected_crime,
+              number_of_officers: this.n_officers,
+            }
+          })
+          .then(function (response) {
+            // handle success
+            console.log(response);
+
+            if(response.data.error) {
+              Swal.fire({
+                title: 'Error',
+                text: response.data.error,
+                icon: 'error',
+                confirmButtonText: 'Ok'
+              })
+              app.allocation = [];
+            }
+
+
+            let allocation = response.data.features.map(x => { return({
+              zip_code: x.properties.zipCode,
+              crimes: x.properties.crime_count,
+              armed: x.properties.armed_officers,
+              unarmed: x.properties.unarmed_officers
+            }) });
+
+            // Sort allocation by armed officers
+            allocation.sort((a,b) => {
+              return b.armed - a.armed;
+            });
+
+            app.allocation = allocation;
+
+            geojson = L.geoJson(response.data, {
+              style: style,
+              onEachFeature: onEachFeature
+            }).addTo(map);
+          })
+          .catch(function (error) {
+            // handle error
+            console.log(error);
+          });
+        }
+      }
+    });
+  </script>
+
+  <script>
+    var map = L.map('map').setView([39.099225, -94.5839147], 10);
     var geojson;
 
     L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -158,15 +377,11 @@
       accessToken: '{{ mapbox_key }}'
     }).addTo(map);
 
-    geojson = L.geoJson(zipCodesData, {
-      style: style,
-      onEachFeature: onEachFeature
-    }).addTo(map);
 
     var info = L.control();
 
     info.onAdd = function (map) {
-      this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+      this._div = L.DomUtil.create('div', 'info_map'); // create a div with a class "info"
       this.update();
       return this._div;
     };
@@ -176,7 +391,9 @@
       this._div.innerHTML = '<h4>Crime Prediction</h4>' + (props ?
         'Zip Code: ' + props.zipCode + '<br />' + props.county + '<br />' +
         props.city  + ', ' + props.state +
-        '<br /><b>' + props.density + ' crimes</b>'
+        '<br /><b>' + props.density + ' crimes</b>'+
+        '<br /><b>' + props.armed_officers + ' armed officers</b>'+
+        '<br /><b>' + props.unarmed_officers + ' unarmed officers</b>'
         : 'Hover over a ZIP Code');
     };
 
@@ -188,7 +405,7 @@
     legend.onAdd = function (map) {
 
       var div = L.DomUtil.create('div', 'info legend'),
-        grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+        grades = [0, 5, 10, 20, 50, 100],
         labels = [];
 
       // loop through our density intervals and generate a label with a colored square for each interval
@@ -203,4 +420,68 @@
 
     legend.addTo(map);
   </script>
+  <script>
+     var timeFormat = 'DD/MM/YYYY';
+
+  var config = {
+      type:    'line',
+      data:    {
+          datasets: [
+              {
+                  label: "Zip Code crimes",
+                  data: [],
+                  fill: true,
+                  borderColor: 'red',
+                  backgroundColor: 'rgba(255,0,0,0.5)'
+              }
+          ]
+      },
+      options: {
+          responsive: true,
+          scales:     {
+              xAxes: [{
+                  type:       "time",
+                  time:       {
+                      format: timeFormat,
+                      tooltipFormat: 'll'
+                  },
+                  scaleLabel: {
+                      display:     true,
+                      labelString: 'Date'
+                  }
+              }],
+              yAxes: [{
+                 ticks: {
+                      beginAtZero: true
+                  },
+                  scaleLabel: {
+                      display:     true,
+                      labelString: 'Forecasted Crimes'
+                  }
+              }]
+          }
+    }
+};
+
+window.onload = function () {
+    var ctx       = document.getElementById("myChart").getContext("2d");
+    window.myLine = new Chart(ctx, config);
+};
+    </script>
+    <script>
+      function whenClicked(e) {
+        app.selected_zip_code = e.target.feature.properties.zipCode;
+        app.update_forecast_chart();
+      }
+
+
+      function onEachFeature(feature, layer) {
+          //bind click
+          layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+              click: whenClicked
+          });
+      }
+    </script>
 {% endblock javascripts %}
